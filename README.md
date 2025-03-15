@@ -50,6 +50,7 @@ Edit the `config.json` file to set alert thresholds and notification preferences
 | Method | Endpoint | Description |
 |--------|------------|-------------|
 | GET | `/status` | Get system health stats |
+| GET | `/docs` | Get API docs in Swagger |
 | POST | `/set_alerts` | Configure alert thresholds |
 
 ## 📜 License
