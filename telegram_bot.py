@@ -2,9 +2,11 @@ import json
 import os
 import logging
 from telegram import Bot
+import asyncio
 
 # Load environment variables
 from dotenv import load_dotenv
+
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
@@ -13,24 +15,45 @@ LOG_FILE = "system_stats.log"
 
 bot = Bot(token=TOKEN)
 
+
 def get_last_log():
-    """ Reads the last log entry from the file """
+    """Reads the last log entry from the file"""
     try:
         with open(LOG_FILE, "r") as file:
-            logs = file.readlines()
+            logs = json.load(file)  # Load entire JSON array
             if not logs:
                 return "No logs found."
-            last_log = json.loads(logs[-1])  # Parse the last JSON object
-            return f"📊 *System Status Update:*\n🕒 {last_log['timestamp']}\n\n```json\n{json.dumps(last_log['stats'], indent=2)}```"
+            
+            last_log = logs[-1]  # Get last entry
+            stats = last_log["stats"]  # Fix incorrect key
+
+            main_string = f"📊 *System Status Update:*\n🕒 {last_log['timestamp']}\n\n"
+
+            for key, value in stats.items():  # Fix iteration
+                if key != "system_info" :
+                    main_string += f"🔹 *{key.capitalize()}*\n"
+                    for k, v in value.items():
+                        if isinstance(v, dict) and "value" in v and "unit" in v:
+                            main_string += f"  - {k}: {v['value']} {v['unit']}\n"
+                        else:
+                            main_string += f"  - {k}: {v}\n"  # Handle plain integers
+                    main_string += "\n"
+            return main_string
+    except json.JSONDecodeError:
+        logging.error("Log file contains invalid JSON.")
+        return "⚠️ Log file contains invalid JSON."
     except Exception as e:
         logging.error(f"Error reading log file: {e}")
         return "⚠️ Error retrieving logs."
 
-def send_latest_log():
-    """ Sends the last log entry to the Telegram user """
+
+
+async def send_latest_log():
+    """Sends the last log entry to the Telegram user"""
     message = get_last_log()
-    bot.send_message(chat_id=CHAT_ID, text=message, parse_mode="Markdown")
+    await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode="Markdown")
+
+
 
 if __name__ == "__main__":
-    send_latest_log()
-
+    asyncio.run(send_latest_log())

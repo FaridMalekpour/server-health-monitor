@@ -64,7 +64,7 @@ def get_system_stats():
             "architecture": platform.architecture()[0],
             "ip_address": get_ip_address(),
         },
-        "uptime": {"value": round(psutil.boot_time()), "unit": "timestamp (epoch)"},
+        "uptime": {"value": float(round(psutil.boot_time())), "unit": "timestamp (epoch)"},
     }
 
     return stats
