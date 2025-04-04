@@ -23,21 +23,20 @@ def get_last_log():
             logs = json.load(file)  # Load entire JSON array
             if not logs:
                 return "No logs found."
-            
+
             last_log = logs[-1]  # Get last entry
             stats = last_log["stats"]  # Fix incorrect key
 
-            main_string = f"📊 *System Status Update:*\n🕒 {last_log['timestamp']}\n\n"
+            main_string = f"📊 System Status Update:\n🕒 {last_log['timestamp']}\n\n"
 
             for key, value in stats.items():  # Fix iteration
-                if key != "system_info" :
-                    main_string += f"🔹 *{key.capitalize()}*\n"
-                    for k, v in value.items():
-                        if isinstance(v, dict) and "value" in v and "unit" in v:
-                            main_string += f"  - {k}: {v['value']} {v['unit']}\n"
-                        else:
-                            main_string += f"  - {k}: {v}\n"  # Handle plain integers
-                    main_string += "\n"
+                main_string += f"🔹 {key.capitalize()}\n"
+                for k, v in value.items():
+                    if isinstance(v, dict) and "value" in v and "unit" in v:
+                        main_string += f"  - {k}: {v['value']} {v['unit']}\n"
+                    else:
+                        main_string += f"  - {k}: {v}\n"  # Handle plain integers
+                main_string += "\n"
             return main_string
     except json.JSONDecodeError:
         logging.error("Log file contains invalid JSON.")
@@ -47,12 +46,10 @@ def get_last_log():
         return "⚠️ Error retrieving logs."
 
 
-
 async def send_latest_log():
     """Sends the last log entry to the Telegram user"""
     message = get_last_log()
-    await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode="Markdown")
-
+    await bot.send_message(chat_id=CHAT_ID, text=message)
 
 
 if __name__ == "__main__":

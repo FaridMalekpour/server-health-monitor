@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import os
 
 from system_stats import get_system_stats
 
@@ -18,22 +19,27 @@ def read_root():
 @app.get("/system")
 def system_info():
     stats = get_system_stats()
+    log_entry = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "stats": stats,
+    }
 
-    log_entry = {"timestamp": datetime.now(timezone.utc).isoformat(), "stats": stats}
+    # Check if file exists and contains valid JSON
+    if os.path.exists(LOG_FILE) and os.path.getsize(LOG_FILE) > 0:
+        try:
+            with open(LOG_FILE, "r") as log_file:
+                logs = json.load(log_file)
+                if not isinstance(logs, list):
+                    logs = []  # If it's not a list, reset it
+        except json.JSONDecodeError:
+            logs = []  # If invalid JSON, reset it
+    else:
+        logs = []
 
-    # Read the existing log entries
-    try:
-        with LOG_FILE.open("r") as log_file:
-            log_data = json.load(log_file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        log_data = []
-
-    # Add the new entry to the existing log data
-    log_data.append(log_entry)
-
-    # Write the updated log back to the file
-    with LOG_FILE.open("w") as log_file:
-        json.dump(log_data, log_file, indent=4)
+    # Append new entry and write back as a valid JSON array
+    logs.append(log_entry)
+    with open(LOG_FILE, "w") as log_file:
+        json.dump(logs, log_file, indent=4)
 
     print("System stats logged.")
     return stats
